@@ -10,7 +10,7 @@ class App extends Component {
   constructor(props) {
     super(props)
     this.state = {
-      todoListContract: {},
+      todoList: {},
       account: '',
       taskCount: 0,
       tasks: [],
@@ -26,14 +26,14 @@ class App extends Component {
     const web3 = new Web3(Web3.givenProvider)
     const accounts = await web3.eth.getAccounts()
     this.setState({ account: accounts[0] })
-    const todoListContract = new web3.eth.Contract(TODO_LIST_ABI, TODO_LIST_ADDRESS)
+    const todoList = new web3.eth.Contract(TODO_LIST_ABI, TODO_LIST_ADDRESS)
     // console.log(todoList)
-    this.setState({todoListContract})
-    const taskCount = await todoListContract.methods.taskCount().call()
+    this.setState({todoList})
+    const taskCount = await todoList.methods.taskCount().call()
     // console.log(taskCount)
     this.setState({taskCount})
-    for(let i = 0; i<= taskCount; i++) {
-      let task = await todoListContract.methods.tasks(i).call()
+    for(let i = 0; i < parseInt(taskCount); i++) {
+      let task = await todoList.methods.tasks(i).call()
       this.setState({
         tasks: [...this.state.tasks, task]
       })
@@ -47,25 +47,30 @@ class App extends Component {
   }
 
   createTask = async () => {
-    await this.state.todoListContract.methods.addTask(this.state.task).send({from: this.state.account})
-    const task = {
-     "_id": this.state.taskCount + 1,
-     "_task": this.state.task,
-     "completed": false
-    }
-    this.setState({
-      tasks: [...this.state.tasks, task]
+    await this.state.todoList.methods.addTask(this.state.task)
+    .send({from: this.state.account})
+    .on('transactionHash', hash => { 
+      const task = {
+        "_id": this.state.taskCount + 1,
+        "_task": this.state.task,
+        "completed": false
+       }
+       this.setState({
+         tasks: [...this.state.tasks, task]
+       })
+       this.setState({task: ''})
     })
-    this.setState({task: ''})
   }
 
   checkboxHandler = async event => {
     const i = event.target.value
-    console.log(this.state.account)
-    await this.state.todoListContract.methods.completedTask(i).send({from: this.state.account})
-    const tasks = [...this.state.tasks];
-    tasks[i] = { ...tasks[i], completed: !tasks[i].completed };
-    this.setState({tasks})
+    await this.state.todoList.methods.completedTask(i)
+    .send({from: this.state.account})
+    .on('transactionHash', hash => { 
+      const tasks = [...this.state.tasks];
+      tasks[i] = { ...tasks[i], completed: !tasks[i].completed };
+      this.setState({tasks})
+    })
   };
 
   todoTask = () => {
@@ -120,8 +125,8 @@ class App extends Component {
         />
 
         <button className="btn btn-sm btn-primary btn-block" onClick={this.createTask} type="button">Create To Do</button>
-        <button className="btn btn-sm btn-info btn-block todoStyle" onClick={this.todoTask}>To Do</button>
-        <button className="btn btn-sm btn-success btn-block doneStyle" onClick={this.doneTask} type="button">Done</button>
+        <button className="btn btn-sm btn-info btn-block todoStyle" onClick={this.todoTask}>Pending</button>
+        <button className="btn btn-sm btn-success btn-block doneStyle" onClick={this.doneTask} type="button">Completed</button>
         
         { todoListData }
 
