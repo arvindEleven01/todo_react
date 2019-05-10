@@ -6,16 +6,19 @@ const TodoList = (props) => {
             return(
                 <div className="taskTemplate mt-3" key={key}>
                     <label>
-                    <input 
-                        type="checkbox" 
-                        value={key}
-                        onChange={props.checkboxHandler} 
-                    />
-                    {
-                        task.completed 
-                        ? ( <span className="completedTaskList">{task._task}</span> )
-                        : ( <span className="content">{task._task}</span> )
-                    }
+                        {
+                            !task.completed &&
+                            <input 
+                                type="checkbox" 
+                                value={task._id-1}
+                                onChange={props.checkboxHandler} 
+                            />
+                        }
+                        {
+                            task.completed 
+                            ? ( <span className="completedTaskList">{task._task}</span> )
+                            : ( <span className="content">{task._task}</span> )
+                        }
                     </label>
                 </div>
             )

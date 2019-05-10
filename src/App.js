@@ -10,7 +10,7 @@ class App extends Component {
   constructor(props) {
     super(props)
     this.state = {
-      todoList: {},
+      todoListContract: {},
       account: '',
       taskCount: 0,
       tasks: [],
@@ -28,7 +28,7 @@ class App extends Component {
     this.setState({ account: accounts[0] })
     const todoList = new web3.eth.Contract(TODO_LIST_ABI, TODO_LIST_ADDRESS)
     // console.log(todoList)
-    this.setState({todoList})
+    this.setState({todoListContract: todoList})
     const taskCount = await todoList.methods.taskCount().call()
     // console.log(taskCount)
     this.setState({taskCount})
@@ -47,7 +47,7 @@ class App extends Component {
   }
 
   createTask = async () => {
-    await this.state.todoList.methods.addTask(this.state.task)
+    await this.state.todoListContract.methods.addTask(this.state.task)
     .send({from: this.state.account})
     .on('transactionHash', hash => { 
       const task = {
@@ -64,51 +64,80 @@ class App extends Component {
 
   checkboxHandler = async event => {
     const i = event.target.value
-    await this.state.todoList.methods.completedTask(i)
+    console.log(i)
+    await this.state.todoListContract.methods.completedTask(i)
     .send({from: this.state.account})
     .on('transactionHash', hash => { 
       const tasks = [...this.state.tasks];
       tasks[i] = { ...tasks[i], completed: !tasks[i].completed };
       this.setState({tasks})
+      
     })
   };
 
-  todoTask = () => {
-    let t = []
-    const tasks = this.state.tasks;
-    for(let i in tasks){
-      if(tasks[i].completed === false) {
-        t.push(tasks[i])
+  allTasks = async (type) => {
+    this.setState({tasks:[]})
+    const taskCount = await this.state.todoListContract.methods.taskCount().call()
+    this.setState({taskCount})
+    for(let i = 0; i < parseInt(taskCount); i++) {
+      let task = await this.state.todoListContract.methods.tasks(i).call()
+      if(type === 'todo'){
+        if(task.completed === false) {
+          this.setState({
+            tasks: [...this.state.tasks, task]
+          })
+        }
+        this.setState({todo: true})
+        this.setState({done: false})
+      } 
+      else if(type === 'done') {
+        if(task.completed === true) {
+          this.setState({
+            tasks: [...this.state.tasks, task]
+          })
+        }
+        this.setState({done: true})
+        this.setState({todo: false})
       }
     }
-    this.setState({todoList: t})
-    this.setState({todo: true})
-    this.setState({done: false})
   }
 
-  doneTask = () => {
-    let t = []
-    const tasks = this.state.tasks;
-    for(let i in tasks){
-      if(tasks[i].completed === true) {
-        t.push(tasks[i])
-      }
-    }
-    this.setState({doneList: t})
-    this.setState({done: true})
-    this.setState({todo: false})
-  }
+  // todoTask = () => {
+  //   let t = []
+  //   const tasks = this.state.tasks;
+  //   for(let i in tasks){
+  //     if(tasks[i].completed === false) {
+  //       t.push(tasks[i])
+  //     }
+  //   }
+  //   this.setState({todoList: t})
+  //   this.setState({todo: true})
+  //   this.setState({done: false})
+  // }
+
+  // doneTask = () => {
+  //   let t = []
+  //   const tasks = this.state.tasks;
+  //   for(let i in tasks){
+  //     if(tasks[i].completed === true) {
+  //       t.push(tasks[i])
+  //     }
+  //   }
+  //   this.setState({doneList: t})
+  //   this.setState({done: true})
+  //   this.setState({todo: false})
+  // }
 
   render() {
     let todoListData;
     if(!this.state.todo && !this.state.done){
       todoListData = <TodoList tasks={this.state.tasks} checkboxHandler={this.checkboxHandler}/>
     }
-    else if (this.state.todo) {
-      todoListData = <TodoList tasks={this.state.todoList} checkboxHandler={this.checkboxHandler}/> 
+    else if (this.state.todo === true) {
+      todoListData = <TodoList tasks={this.state.tasks} checkboxHandler={this.checkboxHandler}/> 
     }
-    else if (this.state.done) {
-      todoListData = <TodoList tasks={this.state.doneList} checkboxHandler={this.checkboxHandler}/> 
+    else if (this.state.done === true) {
+      todoListData = <TodoList tasks={this.state.tasks} checkboxHandler={this.checkboxHandler}/> 
     }
 
     return (
@@ -125,8 +154,8 @@ class App extends Component {
         />
 
         <button className="btn btn-sm btn-primary btn-block" onClick={this.createTask} type="button">Create To Do</button>
-        <button className="btn btn-sm btn-info btn-block todoStyle" onClick={this.todoTask}>Pending</button>
-        <button className="btn btn-sm btn-success btn-block doneStyle" onClick={this.doneTask} type="button">Completed</button>
+        <button className="btn btn-sm btn-info btn-block todoStyle" onClick={() => { this.allTasks('todo')} }>Pending</button>
+        <button className="btn btn-sm btn-success btn-block doneStyle" onClick={() => {this.allTasks('done')} } type="button">Completed</button>
         
         { todoListData }
 
