@@ -27,10 +27,8 @@ class App extends Component {
     const accounts = await web3.eth.getAccounts()
     this.setState({ account: accounts[0] })
     const todoList = new web3.eth.Contract(TODO_LIST_ABI, TODO_LIST_ADDRESS)
-    // console.log(todoList)
     this.setState({todoListContract: todoList})
     const taskCount = await todoList.methods.taskCount().call()
-    // console.log(taskCount)
     this.setState({taskCount})
     for(let i = 0; i < parseInt(taskCount); i++) {
       let task = await todoList.methods.tasks(i).call()
@@ -64,7 +62,6 @@ class App extends Component {
 
   checkboxHandler = async event => {
     const i = event.target.value
-    console.log(i)
     await this.state.todoListContract.methods.completedTask(i)
     .send({from: this.state.account})
     .on('transactionHash', hash => { 
@@ -101,32 +98,6 @@ class App extends Component {
       }
     }
   }
-
-  // todoTask = () => {
-  //   let t = []
-  //   const tasks = this.state.tasks;
-  //   for(let i in tasks){
-  //     if(tasks[i].completed === false) {
-  //       t.push(tasks[i])
-  //     }
-  //   }
-  //   this.setState({todoList: t})
-  //   this.setState({todo: true})
-  //   this.setState({done: false})
-  // }
-
-  // doneTask = () => {
-  //   let t = []
-  //   const tasks = this.state.tasks;
-  //   for(let i in tasks){
-  //     if(tasks[i].completed === true) {
-  //       t.push(tasks[i])
-  //     }
-  //   }
-  //   this.setState({doneList: t})
-  //   this.setState({done: true})
-  //   this.setState({todo: false})
-  // }
 
   render() {
     let todoListData;
